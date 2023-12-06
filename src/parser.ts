@@ -1,7 +1,10 @@
-import { decodeMimeWords, decodeQuotedPrintable} from 'https://deno.land/x/lettercoder@v0.0.7.1/mod.ts';
-import { decodeBase64 as toByteArray } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
+import {
+  decodeMimeWords,
+  decodeQuotedPrintable,
+} from "https://deno.land/x/lettercoder@v0.0.7.1/mod.ts";
+import { decodeBase64 as toByteArray } from "https://deno.land/std@0.208.0/encoding/base64.ts";
 
-import { unquote } from './helpers.ts';
+import { unquote } from "./helpers.ts";
 
 type Headers = { [k: string]: string | undefined };
 
@@ -20,28 +23,28 @@ export interface LetterparserNode {
 const MAX_DEPTH = 99;
 
 export function parseHeaderValue(
-  value: string
+  value: string,
 ): { firstValue: string; parameters: Headers } | undefined {
-  if (value.includes(',')) {
+  if (value.includes(",")) {
     return undefined;
   }
 
-  const split = value.split(';').map(s => s.trim());
+  const split = value.split(";").map((s) => s.trim());
 
   const parameters: Headers = {};
 
   if (split.length >= 2) {
     for (const parameter of split.slice(1)) {
-      const parameterSplit = parameter.split('=');
+      const parameterSplit = parameter.split("=");
       const name = parameterSplit[0].toLowerCase().trim();
       if (parameterSplit.length === 1) {
-        parameters[name] = '';
+        parameters[name] = "";
         continue;
       }
 
       let value = parameterSplit[1];
       if (parameterSplit.length > 2) {
-        value = parameterSplit.slice(1).join('=');
+        value = parameterSplit.slice(1).join("=");
       }
 
       value = unquote(value);
@@ -59,7 +62,7 @@ export function parseHeaderValue(
 }
 
 export function parseContentType(
-  value: string
+  value: string,
 ): LetterparserContentType | undefined {
   const parsedValue = parseHeaderValue(value);
   if (!parsedValue) {
@@ -69,10 +72,10 @@ export function parseContentType(
   let encoding: string | undefined;
   const { firstValue, parameters } = parsedValue;
 
-  if (typeof parameters['charset'] === 'string') {
-    encoding = parameters['charset'].split('*')[0];
-  } else if (firstValue.startsWith('text/')) {
-    encoding = 'utf-8';
+  if (typeof parameters["charset"] === "string") {
+    encoding = parameters["charset"].split("*")[0];
+  } else if (firstValue.startsWith("text/")) {
+    encoding = "utf-8";
   }
 
   return {
@@ -85,7 +88,7 @@ export function parseContentType(
 export function parseHeaders(
   lines: string[],
   lineStartIdx: number,
-  lineEndIdx: number
+  lineEndIdx: number,
 ) {
   const headers: Headers = {};
   let headerName: string | undefined;
@@ -97,22 +100,22 @@ export function parseHeaders(
   for (; lineIdx < lineEndIdx; lineIdx++) {
     const line = lines[lineIdx];
 
-    if (line.startsWith(' ') || line.startsWith('\t')) {
-      if (typeof headerName !== 'string' || typeof headerValue !== 'string') {
+    if (line.startsWith(" ") || line.startsWith("\t")) {
+      if (typeof headerName !== "string" || typeof headerValue !== "string") {
         throw new Error(
-          'Unexpected space at the beginning of line ' + (lineIdx + 1)
+          "Unexpected space at the beginning of line " + (lineIdx + 1),
         );
       }
 
-      headerValue += '\n' + line.trim();
+      headerValue += "\n" + line.trim();
     } else {
       if (headerName && headerValue) {
         headerValue = decodeMimeWords(headerValue);
         if (headerName in headers) {
           const value = headers[headerName];
 
-          if (typeof value === 'string') {
-            headers[headerName] = value + ', ' + headerValue;
+          if (typeof value === "string") {
+            headers[headerName] = value + ", " + headerValue;
           } else {
             headers[headerName] = headerValue;
           }
@@ -120,10 +123,10 @@ export function parseHeaders(
           headers[headerName] = headerValue;
         }
 
-        if (headerName === 'Content-Type') {
+        if (headerName === "Content-Type") {
           contentType = parseContentType(headerValue);
           if (
-            contentType?.type?.startsWith('multipart') &&
+            contentType?.type?.startsWith("multipart") &&
             contentType?.parameters?.boundary
           ) {
             boundary = contentType?.parameters?.boundary;
@@ -131,28 +134,28 @@ export function parseHeaders(
         }
       }
 
-      if (line === '') {
+      if (line === "") {
         break;
       }
 
-      if (boundary && line.startsWith('--' + boundary)) {
+      if (boundary && line.startsWith("--" + boundary)) {
         lineIdx--;
         break;
       }
 
-      const colonIdx = line.indexOf(':');
+      const colonIdx = line.indexOf(":");
       headerName = line
         .substring(0, colonIdx)
-        .split('-')
-        .map(s => s.charAt(0).toUpperCase() + s.substring(1).toLowerCase())
-        .join('-');
+        .split("-")
+        .map((s) => s.charAt(0).toUpperCase() + s.substring(1).toLowerCase())
+        .join("-");
       headerValue = line.substring(colonIdx + 1).trim();
     }
   }
 
   // Default Content-Type.
-  if (!contentType && !('Content-Type' in headers)) {
-    contentType = parseContentType('text/plain');
+  if (!contentType && !("Content-Type" in headers)) {
+    contentType = parseContentType("text/plain");
   }
 
   return [headers, contentType, lineIdx] as const;
@@ -163,10 +166,10 @@ export function parseBody(
   lines: string[],
   lineStartIdx: number,
   lineEndIdx: number,
-  lookaheadBoundaryLineIdx?: number
+  lookaheadBoundaryLineIdx?: number,
 ): readonly [LetterparserNode, number] {
   if (depth > MAX_DEPTH) {
-    throw new Error('Maximum depth of ' + MAX_DEPTH + ' exceeded.');
+    throw new Error("Maximum depth of " + MAX_DEPTH + " exceeded.");
   }
 
   let contents: LetterparserNode;
@@ -174,28 +177,28 @@ export function parseBody(
   let [headers, parsedType, lineIdx] = parseHeaders(
     lines,
     lineStartIdx,
-    lineEndIdx
+    lineEndIdx,
   );
   if (!parsedType) {
     throw new Error(
       'Invalid content type "' +
-        headers['Content-Type'] +
+        headers["Content-Type"] +
         '" at line ' +
-        (lineIdx + 1)
+        (lineIdx + 1),
     );
   }
   lineIdx++;
 
   const { type, parameters } = parsedType;
 
-  if (type?.startsWith('message') && type !== 'message/delivery-status') {
+  if (type?.startsWith("message") && type !== "message/delivery-status") {
     const endIdx = lookaheadBoundaryLineIdx ?? lineEndIdx;
 
     const [subcontents, newLineIdx] = parseBody(
       depth + 1,
       lines,
       lineIdx,
-      endIdx
+      endIdx,
     );
 
     contents = {
@@ -205,13 +208,13 @@ export function parseBody(
     };
 
     lineIdx = newLineIdx;
-  } else if (type?.startsWith('multipart/')) {
-    const boundary = parameters['boundary'];
+  } else if (type?.startsWith("multipart/")) {
+    const boundary = parameters["boundary"];
     const contentsArray: LetterparserNode[] = [];
 
     if (!boundary) {
       throw new Error(
-        'Multipart type lacking boundary at line ' + (lineStartIdx + 1)
+        "Multipart type lacking boundary at line " + (lineStartIdx + 1),
       );
     }
 
@@ -219,19 +222,19 @@ export function parseBody(
     for (; lineIdx < lineEndIdx; lineIdx++) {
       const line = lines[lineIdx];
 
-      if (line.startsWith('--' + boundary)) {
-        if (line.startsWith('--' + boundary + '--')) {
+      if (line.startsWith("--" + boundary)) {
+        if (line.startsWith("--" + boundary + "--")) {
           finished = true;
           break;
         }
 
         let lookaheadBoundaryLineIdx = lines
           .slice(lineIdx + 2, lineEndIdx)
-          .findIndex(line => line.startsWith('--' + boundary));
+          .findIndex((line) => line.startsWith("--" + boundary));
         if (!lookaheadBoundaryLineIdx) {
           throw new Error(
-            'Multipart parsing failure (boundary lookahead failed) at line ' +
-              lineIdx
+            "Multipart parsing failure (boundary lookahead failed) at line " +
+              lineIdx,
           );
         }
 
@@ -242,13 +245,13 @@ export function parseBody(
           lines,
           lineIdx + 1,
           lineEndIdx,
-          lookaheadBoundaryLineIdx
+          lookaheadBoundaryLineIdx,
         );
 
         lineIdx = newLineIdx;
 
         if (!subcontents) {
-          throw new Error('Multipart parsing failure at line ' + newLineIdx);
+          throw new Error("Multipart parsing failure at line " + newLineIdx);
         }
 
         contentsArray.push(subcontents);
@@ -257,11 +260,11 @@ export function parseBody(
 
     if (!finished) {
       throw new Error(
-        'Reached line ' +
+        "Reached line " +
           (lineIdx + 1) +
           ' expecing boundary "--' +
           boundary +
-          '--", but none was found'
+          '--", but none was found',
       );
     }
 
@@ -273,36 +276,37 @@ export function parseBody(
   } else {
     const endIdx = lookaheadBoundaryLineIdx ?? lineEndIdx;
     const linesSlice = lines.slice(lineIdx, endIdx);
-    let body: string | Uint8Array = linesSlice.join('\n');
+    let body: string | Uint8Array = linesSlice.join("\n");
 
-    if (headers['Content-Transfer-Encoding']) {
-      const transferEncoding =
-        headers['Content-Transfer-Encoding'].toLowerCase();
+    if (headers["Content-Transfer-Encoding"]) {
+      const transferEncoding = headers["Content-Transfer-Encoding"]
+        .toLowerCase();
 
-      const stringBody =
-        transferEncoding === 'base64' ? linesSlice.join('') : body;
+      const stringBody = transferEncoding === "base64"
+        ? linesSlice.join("")
+        : body;
 
-      if (parsedType.type.startsWith('text/')) {
+      if (parsedType.type.startsWith("text/")) {
         switch (transferEncoding) {
-          case 'base64':
+          case "base64":
             {
               const decoder = new TextDecoder(parsedType.encoding);
               body = decoder.decode(toByteArray(stringBody));
             }
             break;
-          case 'quoted-printable':
+          case "quoted-printable":
             body = decodeQuotedPrintable(
               stringBody,
-              parsedType.encoding
+              parsedType.encoding,
             ) as string;
             break;
         }
       } else {
         switch (transferEncoding) {
-          case 'base64':
+          case "base64":
             body = toByteArray(stringBody);
             break;
-          case 'quoted-printable':
+          case "quoted-printable":
             body = decodeQuotedPrintable(stringBody) as Uint8Array;
             break;
         }
