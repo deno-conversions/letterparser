@@ -1,9 +1,9 @@
-import { unquote } from './helpers.js';
+import { unquote } from './helpers.ts';
 import {
   LetterparserNode,
   LetterparserContentType,
   parseHeaderValue,
-} from './parser.js';
+} from './parser.ts';
 
 export interface LetterparserAttachment {
   contentType: LetterparserContentType;

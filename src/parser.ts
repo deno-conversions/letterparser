@@ -1,22 +1,7 @@
-import { decodeMimeWords, decodeQuotedPrintable } from 'lettercoder';
-import { toByteArray } from 'base64-js';
+import { decodeMimeWords, decodeQuotedPrintable} from 'https://deno.land/x/lettercoder@v0.0.7.1/mod.ts';
+import { decodeBase64 as toByteArray } from 'https://deno.land/std@0.208.0/encoding/base64.ts';
 
-import { unquote } from './helpers.js';
-
-if (typeof TextDecoder === 'undefined') {
-  /* eslint-disable */
-  const nodeVer = typeof process !== 'undefined' && process.versions?.node;
-  const nodeRequire = nodeVer
-    ? // @ts-ignore Isomorphism.
-      typeof __webpack_require__ === 'function'
-      ? // @ts-ignore Isomorphism.
-        __non_webpack_require__
-      : require
-    : undefined;
-  // @ts-ignore Isomorphism.
-  global['TextDecoder'] = nodeRequire('util').TextDecoder;
-  /* eslint-enable */
-}
+import { unquote } from './helpers.ts';
 
 type Headers = { [k: string]: string | undefined };
 
@@ -43,7 +28,7 @@ export function parseHeaderValue(
 
   const split = value.split(';').map(s => s.trim());
 
-  const parameters: any = {};
+  const parameters: Headers = {};
 
   if (split.length >= 2) {
     for (const parameter of split.slice(1)) {
@@ -97,7 +82,7 @@ export function parseContentType(
   };
 }
 
-function parseHeaders(
+export function parseHeaders(
   lines: string[],
   lineStartIdx: number,
   lineEndIdx: number

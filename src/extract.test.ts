@@ -1,4 +1,10 @@
-import { extract } from '../src/index.js';
+import {
+  assertEquals,
+  assertObjectMatch,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { describe, it } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+
+import { extract } from "./index.ts";
 
 describe('extract', () => {
   it('should extract information from a test message', () => {
@@ -11,7 +17,7 @@ Content-Type: text/plain; charset=utf-8
 
 Some message.`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       text: 'Some message.',
       from: {
         name: 'A',
@@ -31,7 +37,7 @@ Some message.`);
   });
 
   // Issue #5: https://github.com/mat-sz/letterparser/issues/5
-  it('should extract AMP data from a text/x-amp-html message', () => {
+  it("should extract AMP data from a text/x-amp-html message", () => {
     const output = extract(
       'Content-Type: multipart/alternative;\r\n' +
         '\tboundary="0000000000000xxxxxxxxxxxxxxx"\r\n' +
@@ -60,7 +66,7 @@ Some message.`);
         '--0000000000000xxxxxxxxxxxxxxx--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       html: '<div dir="ltr">Example AMP email</div>',
       text: 'Example AMP email',
       amp:
@@ -78,7 +84,7 @@ Some message.`);
     });
   });
 
-  it('should extract content ID along with the attachments', () => {
+  it("should extract content ID along with the attachments", () => {
     const output = extract(`Date: Sun, 24 Oct 2021 05:00:03 +0000
 From: "Lorem Ipsum" <lorem@ipsum.com>
 To: "Foo Bar" <foobor@test.com>
@@ -116,7 +122,7 @@ iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI
 
 --tdplbi0e8pj--`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       html: "Hi,\nI'm <strong>a bold</strong> text.",
       text: "Hi,\nI'm a simple text.",
       from: {
@@ -133,9 +139,9 @@ iVBORw0KGgoAAAANSUhEUgAAAAgAAAAIAQMAAAD+wSzIAAAABlBMVEX///+/v7+jQ3Y5AAAADklEQVQI
       ],
     });
 
-    expect(output.attachments?.[0]?.contentId).toBe(
+    assertEquals(output.attachments?.[0]?.contentId,
       'abcdef-1635051603230@ipsum.com'
     );
-    expect(output.attachments?.[0]?.filename).toBe('test.png');
+    assertEquals(output.attachments?.[0]?.filename, 'test.png');
   });
 });

@@ -1,11 +1,17 @@
-import { parse } from '../src/index.js';
-import { parseContentType } from '../src/parser.js';
+import {
+  assertObjectMatch,
+  assertThrows,
+} from "https://deno.land/std@0.208.0/assert/mod.ts";
+import { describe, it } from "https://deno.land/std@0.208.0/testing/bdd.ts";
+
+import { parse } from "./index.ts";
+import { parseContentType } from "./parser.ts";
 
 describe('parse', () => {
   it('should parse headers by themselves', () => {
     const output = parse(`To: a@example.com\nContent-Type: text/invalid\n`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'text/invalid',
       },
@@ -20,7 +26,7 @@ describe('parse', () => {
   it('should parse body by itself (text/plain)', () => {
     const output = parse(`\nHello world`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'text/plain',
       },
@@ -33,7 +39,7 @@ describe('parse', () => {
       `Content-Type: text/plain\nContent-Transfer-Encoding: base64\n\nSGVsbG8gd29ybGQ=`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'text/plain',
       },
@@ -46,7 +52,7 @@ describe('parse', () => {
       `Content-Type: application/octet-stream\nContent-Transfer-Encoding: base64\n\nQUE=`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'application/octet-stream',
       },
@@ -59,7 +65,7 @@ describe('parse', () => {
       `Content-Type: text/plain\nContent-Transfer-Encoding: quoted-printable\n\nHello world`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'text/plain',
       },
@@ -72,7 +78,7 @@ describe('parse', () => {
       `Content-Type: application/octet-stream\nContent-Transfer-Encoding: quoted-printable\n\n=41=41`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'application/octet-stream',
       },
@@ -83,7 +89,7 @@ describe('parse', () => {
   it('should parse multiline headers', () => {
     const output = parse(`X-Test-Header: test\n test\n`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       headers: {
         'X-Test-Header': 'test test',
       },
@@ -93,7 +99,7 @@ describe('parse', () => {
   it('should parse multiple headers with the same name', () => {
     const output = parse(`X-Test-Header: test\nX-Test-Header: test 2\n`);
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       headers: {
         'X-Test-Header': 'test, test 2',
       },
@@ -105,7 +111,7 @@ describe('parse', () => {
       `Content-Type: multipart/alternative; boundary="boundary"\n\n--boundary\nContent-Type: text/plain\n\nHello world!\n--boundary\nContent-Type: text/plain\n\nHello, again!\n--boundary--`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -128,7 +134,7 @@ describe('parse', () => {
       `To: a@example.com\nContent-Type: message/rfc822\n\nTo: b@example.com\nContent-Type: text/plain\n\nHello world!`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'message/rfc822',
       },
@@ -153,7 +159,7 @@ describe('parse', () => {
         102
       );
 
-    expect(() => parse(input)).toThrowError('Maximum depth of 99 exceeded.');
+    assertThrows(() => parse(input), "Maximum depth of 99 exceeded.");
   });
 
   // Issue #1: https://github.com/mat-sz/letterparser/issues/1
@@ -181,7 +187,7 @@ describe('parse', () => {
         '----_NmP-79d22631bd047a69-Part_1--'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -236,7 +242,7 @@ describe('parse', () => {
         '--_000_XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXnamp_--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       headers: {
         'Message-Id':
           '<xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx@xxxxxxxxxxxx.xxxxxxxx.prod.outlook.com>',
@@ -293,7 +299,7 @@ describe('parse', () => {
         '--0000000000000xxxxxxxxxxxxxxx--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -330,7 +336,7 @@ describe('parse', () => {
         '--0000000000000xxxxxxxxxxxxxxx--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -363,7 +369,7 @@ describe('parse', () => {
         '--0000000000000xxxxxxxxxxxxxxx--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -411,7 +417,7 @@ describe('parse', () => {
         '--0000000000000xxxxxxxxxxxxxxx--\r\n'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -452,7 +458,7 @@ describe('parse', () => {
       `Content-Type: text/plain\nContent-Transfer-Encoding: base64\n\nSGVsb\nG8gd2\n9ybGQ=`
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       contentType: {
         type: 'text/plain',
       },
@@ -474,7 +480,7 @@ describe('parse', () => {
         '--xx-00000000000000000000000000000000--'
     );
 
-    expect(output).toMatchObject({
+    assertObjectMatch(output, {
       body: [
         {
           contentType: {
@@ -489,11 +495,10 @@ describe('parse', () => {
 
 describe('parseContentType', () => {
   it('should parse mime words in parameters correctly', () => {
-    expect(
+    assertObjectMatch(
       parseContentType(
         'application/pdf; name="=?iso-8859-1?Q?pr=FCfbericht.pdf?="'
-      )
-    ).toMatchObject({
+      )!, {
       type: 'application/pdf',
       encoding: undefined,
       parameters: { name: 'prüfbericht.pdf' },

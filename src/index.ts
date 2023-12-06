@@ -2,14 +2,14 @@ import {
   parseBody,
   LetterparserNode,
   LetterparserContentType,
-} from './parser.js';
+} from './parser.ts';
 import {
   extractMail,
   LetterparserMail,
   LetterparserAttachment,
-} from './extractor.js';
+} from './extractor.ts';
 
-export {
+export type {
   LetterparserNode,
   LetterparserContentType,
   LetterparserMail,

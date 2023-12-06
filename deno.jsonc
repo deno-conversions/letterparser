@@ -1,0 +1,19 @@
+{
+  "$schema": "https://deno.land/x/deno/cli/schemas/config-file.v1.json",
+  "fmt": {
+    "include": ["src", "mod.ts"]
+  },
+  "lint": {
+    "include": ["src", "mod.ts"],
+    "rules": {
+      "exclude": ["no-case-declarations", "prefer-const"]
+    }
+  },
+  "test": {
+    "include": ["src", "mod.ts"]
+  },
+  "tasks": {
+    "test": "deno fmt --check && deno lint && deno test"
+  },
+  "lock": false
+}
